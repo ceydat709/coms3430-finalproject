@@ -20,129 +20,117 @@
       </div>
       <div class="sep"></div>
       <button class="btn play-control" id="play" aria-label="Play" title="Play"></button>
-      <button class="btn" id="randomize">randomize grid</button>
+      <button class="btn" id="randomize">randomize</button>
       <button class="btn" id="mutate">mutate</button>
       <button class="btn" id="clear">clear</button>
       <button class="btn warn" id="freeze">freeze</button>
+      <div class="sep"></div>
+      <div class="pill-group" id="mode-btns">
+        <button class="pill on" data-mode="draw">draw</button>
+        <button class="pill" data-mode="bias">bias</button>
+        <button class="pill" data-mode="erase">erase</button>
+      </div>
       <button class="btn soft" id="intro-open">guide</button>
     </div>
   </header>
 
+  <div id="statebar">
+    <span>A·step <b id="sb-a">01</b></span>
+    <span>B·step <b id="sb-b">01</b></span>
+    <span>chord <b id="sb-chord">--</b></span>
+    <span>next <b id="sb-next">--</b></span>
+    <span>collisions <b id="sb-coll">0</b></span>
+    <span>bar <b id="sb-bar">0</b></span>
+  </div>
+
   <div id="wrap">
-    <canvas id="c"></canvas>
-    <div class="transport-status">
-      <span>step <b id="step-lbl">00</b></span>
-      <span>state <b id="state-lbl">silence</b></span>
-      <span>transition <b id="transition-lbl">silence -> silence</b></span>
+    <!-- Dual canvas grids -->
+    <div id="grids-wrap">
+      <div class="grid-panel grid-a-panel">
+        <div class="grid-tag">
+          <span class="gtag-label gtag-a">GRID A</span>
+          <span class="gtag-steps">16 steps · 1.000×</span>
+        </div>
+        <canvas id="ca"></canvas>
+      </div>
+      <div class="grid-panel grid-b-panel">
+        <div class="grid-tag">
+          <span class="gtag-label gtag-b">GRID B</span>
+          <span class="gtag-steps" id="b-tag">13 steps · 0.813×</span>
+        </div>
+        <canvas id="cb"></canvas>
+      </div>
     </div>
+
+    <!-- Interference canvas -->
+    <div id="int-section">
+      <div id="int-header">
+        <span class="int-title">interference pattern</span>
+        <span id="coupling-badge">coupling 0.00</span>
+        <span id="phase-display">align 0% · offset 0.000</span>
+      </div>
+      <canvas id="int-canvas"></canvas>
+    </div>
+
+    <!-- Bottom controls -->
     <div class="panel">
-      <div class="control-bank" aria-label="sequencer controls">
-        <div class="control-section guide-section">
-          <div class="section-title">
-            <span>how to play</span>
-            <span>probability grid</span>
-          </div>
-          <div class="guide-steps">
-            <div class="guide-step"><b>1 paint cells</b><span>click or drag to cycle off, dim, bright, glow</span></div>
-            <div class="guide-step"><b>2 press play</b><span>the scanner chooses one drum per step</span></div>
-            <div class="guide-step"><b>3 shape the chain</b><span>mood pads and row pull bias the next choice</span></div>
-          </div>
-          <div class="prob-key" aria-label="cell probability key">
-            <span><i class="prob-swatch p0"></i>off</span>
-            <span><i class="prob-swatch p33"></i>33%</span>
-            <span><i class="prob-swatch p66"></i>66%</span>
-            <span><i class="prob-swatch p100"></i>100%</span>
-          </div>
+      <div class="control-bank">
+
+        <!-- Global / Markov sliders -->
+        <div class="control-section">
+          <div class="section-title"><span>global controls</span><span>markov shape</span></div>
+          <div class="slider-row"><label>tempo</label><input type="range" id="sl-bpm" min="40" max="180" value="108"><span class="val" id="val-bpm">108</span></div>
+          <div class="slider-row"><label>chaos</label><input type="range" id="sl-chaos" min="0" max="100" value="18"><span class="val" id="val-chaos">0.18</span></div>
+          <div class="slider-row"><label>density</label><input type="range" id="sl-density" min="0" max="100" value="30"><span class="val" id="val-density">0.30</span></div>
+          <div class="slider-row"><label>repeat</label><input type="range" id="sl-rep" min="0" max="100" value="55"><span class="val" id="val-rep">0.55</span></div>
+          <div class="slider-row"><label>smooth</label><input type="range" id="sl-smooth" min="0" max="100" value="45"><span class="val" id="val-smooth">0.45</span></div>
+          <div class="subsection-title">interference</div>
+          <div class="slider-row"><label>B ratio</label><input type="range" id="sl-ratio" min="50" max="150" value="81" step="1"><span class="val" id="val-ratio">13/16</span></div>
+          <div class="slider-row"><label>coupling</label><input type="range" id="sl-coupling" min="0" max="100" value="0"><span class="val" id="val-coupling">0.00</span></div>
         </div>
-        <div class="control-section mood-section">
-          <div class="section-title">
-            <span>markov mood</span>
-            <span>changes chaos, density, repeat</span>
-          </div>
-          <div class="tempo-dial-row">
-            <span class="dial-label" id="tempo-label">tempo</span>
-            <div
-              class="tempo-dial"
-              id="tempo-dial"
-              role="slider"
-              tabindex="0"
-              aria-labelledby="tempo-label"
-              aria-valuemin="60"
-              aria-valuemax="180"
-              aria-valuenow="108"
-            >
-              <span class="dial-face"><i></i></span>
-            </div>
-            <span class="val" id="tempo-val">108</span>
-          </div>
-          <div class="mood-grid" id="mood-btns">
-            <button class="mood on" data-mood="steady"><b>steady</b><small>balanced beat</small></button>
-            <button class="mood" data-mood="sparse"><b>sparse</b><small>more silence</small></button>
-            <button class="mood" data-mood="loop"><b>loop</b><small>more repeats</small></button>
-            <button class="mood" data-mood="wild"><b>wild</b><small>more random</small></button>
-          </div>
-          <div class="mood-readout" id="mood-readout">chaos 0.18 / density 0.72 / repeat 0.22</div>
+
+        <!-- Row pull -->
+        <div class="control-section">
+          <div class="section-title"><span>row pull</span><span>grid bias</span></div>
+          <div id="row-pull-wrap"></div>
         </div>
-        <div class="control-section row-pull-section">
-          <div class="section-title">
-            <span>row pull</span>
-            <span>click to bias next drum</span>
+
+        <!-- Chord chain + strudel -->
+        <div class="control-section">
+          <div class="section-title"><span>chord chain</span></div>
+          <div id="chord-row"></div>
+          <div class="chord-vals">
+            <div class="chord-big"><div class="chord-lbl">current</div><div class="chord-name" id="cur-chord">--</div></div>
+            <div class="chord-big"><div class="chord-lbl">next</div><div class="chord-name" id="next-chord">--</div></div>
           </div>
-          <div class="pulls">
-            <button class="pull-pad pull-bd" data-row="bd">
-              <span class="pull-head"><span><b>bd</b><small>kick</small></span><span class="pull-val" id="pull-bd-val">off</span></span>
-              <span class="pull-dial"><i></i></span>
-            </button>
-            <button class="pull-pad pull-sd" data-row="sd">
-              <span class="pull-head"><span><b>sd</b><small>snare</small></span><span class="pull-val" id="pull-sd-val">off</span></span>
-              <span class="pull-dial"><i></i></span>
-            </button>
-            <button class="pull-pad pull-hh" data-row="hh">
-              <span class="pull-head"><span><b>hh</b><small>hi-hat</small></span><span class="pull-val" id="pull-hh-val">off</span></span>
-              <span class="pull-dial"><i></i></span>
-            </button>
-            <button class="pull-pad pull-cp" data-row="cp">
-              <span class="pull-head"><span><b>cp</b><small>clap</small></span><span class="pull-val" id="pull-cp-val">off</span></span>
-              <span class="pull-dial"><i></i></span>
-            </button>
-            <button class="pull-pad pull-perc" data-row="perc">
-              <span class="pull-head"><span><b>perc</b><small>percussion</small></span><span class="pull-val" id="pull-perc-val">off</span></span>
-              <span class="pull-dial"><i></i></span>
-            </button>
-            <button class="pull-pad pull-bass" data-row="bass">
-              <span class="pull-head"><span><b>bass</b><small>low note</small></span><span class="pull-val" id="pull-bass-val">off</span></span>
-              <span class="pull-dial"><i></i></span>
-            </button>
-          </div>
-          <div class="pull-note">row pull stacks with painted cells; off means the grid decides</div>
+          <div class="subsection-title">strudel preview</div>
+          <div id="strudel-box">--</div>
+          <div id="loading-status" style="font-size:9px;color:var(--muted);margin-top:4px;font-family:var(--mono)">click play to load sounds</div>
         </div>
+
       </div>
     </div>
   </div>
 
   <footer>
-    <div class="hint">paint cells, press play, then try mood pads and row pull · one markov choice per step</div>
+    <div class="hint">paint cells · play · two grids at different tempos create interference · coupling links their patterns</div>
     <div class="footer-state"><span id="freeze-lbl">live grid</span><span id="kit-lbl">analog drum voices</span></div>
   </footer>
 
-  <div class="intro-overlay" id="intro-overlay" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+  <div class="intro-overlay" id="intro-overlay" role="dialog" aria-modal="true">
     <div class="intro-card">
       <div class="intro-kicker">welcome to the grid</div>
-      <h1 id="intro-title">Make beats by painting chances.</h1>
-      <p>
-        Each column is a moment in the loop. Each row is a drum. Brighter cells make that drum more likely,
-        but the Markov chain still chooses one sound at a time.
-      </p>
+      <h1>Two grids. One interference pattern.</h1>
+      <p>Grid A runs 16 steps. Grid B runs at a different length — creating rhythmic interference like two waves crossing. Paint cells, choose a mode, and let the Markov chain evolve.</p>
       <div class="intro-steps">
-        <div><b>Paint</b><span>Click or drag cells to set probability.</span></div>
-        <div><b>Play</b><span>The scanner moves through 16 steps.</span></div>
-        <div><b>Shape</b><span>Use mood and row pull to nudge the chain.</span></div>
+        <div><b>Paint</b><span>Draw, bias, or erase cells in either grid.</span></div>
+        <div><b>Ratio</b><span>Change Grid B's step count for polyrhythm.</span></div>
+        <div><b>Couple</b><span>Link the grids so patterns bleed between them.</span></div>
       </div>
       <button class="intro-start" id="intro-start">let's get started</button>
     </div>
   </div>
 </div>
-
 <script src="app.js"></script>
 </body>
 </html>
