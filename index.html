@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markov Sound Grid</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">⬡ markov sound grid</div>
+    <div class="hdr-right">
+      <div class="pill-group" id="kit-btns">
+        <button class="pill on" data-kit="analog">Analog</button>
+        <button class="pill" data-kit="808">808</button>
+        <button class="pill" data-kit="dust">Dust</button>
+        <button class="pill" data-kit="metal">Metal</button>
+        <button class="pill" data-kit="bit">Bit</button>
+      </div>
+      <div class="sep"></div>
+      <button class="btn play-control" id="play" aria-label="Play" title="Play"></button>
+      <button class="btn" id="randomize">randomize grid</button>
+      <button class="btn" id="mutate">mutate</button>
+      <button class="btn" id="clear">clear</button>
+      <button class="btn warn" id="freeze">freeze</button>
+      <button class="btn soft" id="intro-open">guide</button>
+    </div>
+  </header>
+
+  <div id="wrap">
+    <canvas id="c"></canvas>
+    <div class="transport-status">
+      <span>step <b id="step-lbl">00</b></span>
+      <span>state <b id="state-lbl">silence</b></span>
+      <span>transition <b id="transition-lbl">silence -> silence</b></span>
+    </div>
+    <div class="panel">
+      <div class="control-bank" aria-label="sequencer controls">
+        <div class="control-section guide-section">
+          <div class="section-title">
+            <span>how to play</span>
+            <span>probability grid</span>
+          </div>
+          <div class="guide-steps">
+            <div class="guide-step"><b>1 paint cells</b><span>click or drag to cycle off, dim, bright, glow</span></div>
+            <div class="guide-step"><b>2 press play</b><span>the scanner chooses one drum per step</span></div>
+            <div class="guide-step"><b>3 shape the chain</b><span>mood pads and row pull bias the next choice</span></div>
+          </div>
+          <div class="prob-key" aria-label="cell probability key">
+            <span><i class="prob-swatch p0"></i>off</span>
+            <span><i class="prob-swatch p33"></i>33%</span>
+            <span><i class="prob-swatch p66"></i>66%</span>
+            <span><i class="prob-swatch p100"></i>100%</span>
+          </div>
+        </div>
+        <div class="control-section mood-section">
+          <div class="section-title">
+            <span>markov mood</span>
+            <span>changes chaos, density, repeat</span>
+          </div>
+          <div class="tempo-dial-row">
+            <span class="dial-label" id="tempo-label">tempo</span>
+            <div
+              class="tempo-dial"
+              id="tempo-dial"
+              role="slider"
+              tabindex="0"
+              aria-labelledby="tempo-label"
+              aria-valuemin="60"
+              aria-valuemax="180"
+              aria-valuenow="108"
+            >
+              <span class="dial-face"><i></i></span>
+            </div>
+            <span class="val" id="tempo-val">108</span>
+          </div>
+          <div class="mood-grid" id="mood-btns">
+            <button class="mood on" data-mood="steady"><b>steady</b><small>balanced beat</small></button>
+            <button class="mood" data-mood="sparse"><b>sparse</b><small>more silence</small></button>
+            <button class="mood" data-mood="loop"><b>loop</b><small>more repeats</small></button>
+            <button class="mood" data-mood="wild"><b>wild</b><small>more random</small></button>
+          </div>
+          <div class="mood-readout" id="mood-readout">chaos 0.18 / density 0.72 / repeat 0.22</div>
+        </div>
+        <div class="control-section row-pull-section">
+          <div class="section-title">
+            <span>row pull</span>
+            <span>click to bias next drum</span>
+          </div>
+          <div class="pulls">
+            <button class="pull-pad pull-bd" data-row="bd">
+              <span class="pull-head"><span><b>bd</b><small>kick</small></span><span class="pull-val" id="pull-bd-val">off</span></span>
+              <span class="pull-dial"><i></i></span>
+            </button>
+            <button class="pull-pad pull-sd" data-row="sd">
+              <span class="pull-head"><span><b>sd</b><small>snare</small></span><span class="pull-val" id="pull-sd-val">off</span></span>
+              <span class="pull-dial"><i></i></span>
+            </button>
+            <button class="pull-pad pull-hh" data-row="hh">
+              <span class="pull-head"><span><b>hh</b><small>hi-hat</small></span><span class="pull-val" id="pull-hh-val">off</span></span>
+              <span class="pull-dial"><i></i></span>
+            </button>
+            <button class="pull-pad pull-cp" data-row="cp">
+              <span class="pull-head"><span><b>cp</b><small>clap</small></span><span class="pull-val" id="pull-cp-val">off</span></span>
+              <span class="pull-dial"><i></i></span>
+            </button>
+            <button class="pull-pad pull-perc" data-row="perc">
+              <span class="pull-head"><span><b>perc</b><small>percussion</small></span><span class="pull-val" id="pull-perc-val">off</span></span>
+              <span class="pull-dial"><i></i></span>
+            </button>
+            <button class="pull-pad pull-bass" data-row="bass">
+              <span class="pull-head"><span><b>bass</b><small>low note</small></span><span class="pull-val" id="pull-bass-val">off</span></span>
+              <span class="pull-dial"><i></i></span>
+            </button>
+          </div>
+          <div class="pull-note">row pull stacks with painted cells; off means the grid decides</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="hint">paint cells, press play, then try mood pads and row pull · one markov choice per step</div>
+    <div class="footer-state"><span id="freeze-lbl">live grid</span><span id="kit-lbl">analog drum voices</span></div>
+  </footer>
+
+  <div class="intro-overlay" id="intro-overlay" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+    <div class="intro-card">
+      <div class="intro-kicker">welcome to the grid</div>
+      <h1 id="intro-title">Make beats by painting chances.</h1>
+      <p>
+        Each column is a moment in the loop. Each row is a drum. Brighter cells make that drum more likely,
+        but the Markov chain still chooses one sound at a time.
+      </p>
+      <div class="intro-steps">
+        <div><b>Paint</b><span>Click or drag cells to set probability.</span></div>
+        <div><b>Play</b><span>The scanner moves through 16 steps.</span></div>
+        <div><b>Shape</b><span>Use mood and row pull to nudge the chain.</span></div>
+      </div>
+      <button class="intro-start" id="intro-start">let's get started</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
