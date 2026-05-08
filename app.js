@@ -167,6 +167,9 @@
   
   // ---- AUDIO ----
   let AC=null,masterGain=null,limiter=null;
+  let underwaterFilter=null, underwaterLfo=null, underwaterLfoGain=null;
+  let underwaterActive=false;
+  let underwaterDepth01=0;
   let melBufs={},padBufs={},loaded=false;
   let currentPadSrcs=[];
   function ac(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();return AC;}
@@ -176,9 +179,43 @@
       limiter=ac().createDynamicsCompressor();
       limiter.threshold.value=-12;limiter.knee.value=8;limiter.ratio.value=8;
       limiter.attack.value=.003;limiter.release.value=.18;
-      masterGain.connect(limiter);limiter.connect(ac().destination);
+
+      // Underwater effect chain: master -> lowpass + LFO -> limiter -> destination
+      underwaterFilter=ac().createBiquadFilter();
+      underwaterFilter.type='lowpass';
+      underwaterFilter.frequency.value=20000;
+      underwaterFilter.Q.value=0.7;
+
+      masterGain.connect(underwaterFilter);
+      underwaterFilter.connect(limiter);
+      limiter.connect(ac().destination);
+
+      // LFO (started once audio context exists)
+      underwaterLfo=ac().createOscillator();
+      underwaterLfo.type='sine';
+      underwaterLfo.frequency.value=0.55; // subtle wobble
+      underwaterLfoGain=ac().createGain();
+      underwaterLfoGain.gain.value=0; // depth is enabled when underwater
+      underwaterLfo.connect(underwaterLfoGain);
+      underwaterLfoGain.connect(underwaterFilter.frequency);
+      underwaterLfo.start();
+
+      setUnderwater(underwaterActive, underwaterDepth01);
     }
     return masterGain;
+  }
+
+  function setUnderwater(active, depth01=1){
+    underwaterActive = !!active;
+    underwaterDepth01 = depth01;
+    if(!underwaterFilter || !AC) return;
+    const t = ac().currentTime;
+    const d = Math.max(0, Math.min(1, depth01));
+    // When underwater: lowpass cutoff lowers + LFO depth increases
+    const cutoff = 20000 - d*(18000);
+    const depth = 0 + d*(1200);
+    underwaterFilter.frequency.setTargetAtTime(cutoff, t, 0.05);
+    if(underwaterLfoGain) underwaterLfoGain.gain.setTargetAtTime(depth, t, 0.05);
   }
   function master(){const g=ac().createGain();g.gain.value=0;g.connect(output());return g;}
   async function unlockAudio(){
@@ -259,7 +296,7 @@
   function playSample(buf,gain=1,dur=null){
     if(!buf||!AC)return null;
     const src=AC.createBufferSource(),g=AC.createGain();
-    src.buffer=buf;src.connect(g);g.connect(AC.destination);
+    src.buffer=buf;src.connect(g);g.connect(output());
     g.gain.setValueAtTime(gain,AC.currentTime);
     if(dur){g.gain.setValueAtTime(gain,AC.currentTime+dur*.85);g.gain.linearRampToValueAtTime(0,AC.currentTime+dur);}
     src.start();if(dur)src.stop(AC.currentTime+dur+.05);
@@ -679,11 +716,46 @@
   const JUMP_FORCE = -10.5;
   const MOVE_SPEED = 3.2;
   const GROUND_FRAC = 0.72; // ground Y as fraction of canvas height
+  const WATERLINE_FRAC = 0.58; // below this point: underwater mode (LFO)
+
+  // Platforms define which Grid A row you paint.
+  // tier -> row index in ROWS_CONFIG
+  const PLATFORM_SEGMENTS = [
+    { xStart: 0.00, xEnd: 0.18, yTopFrac: 0.52, tier: 0 }, // kick (dry)
+    { xStart: 0.18, xEnd: 0.33, yTopFrac: 0.49, tier: 1 }, // snare (dry)
+    { xStart: 0.33, xEnd: 0.50, yTopFrac: 0.53, tier: 2 }, // hi-hat (dry)
+    { xStart: 0.50, xEnd: 0.65, yTopFrac: 0.55, tier: 3 }, // clap (dry)
+    { xStart: 0.65, xEnd: 0.82, yTopFrac: 0.66, tier: 4 }, // melody hi (underwater)
+    { xStart: 0.82, xEnd: 1.00, yTopFrac: 0.72, tier: 5 }, // melody lo (underwater)
+  ];
+  const BASE_FLOOR = { xStart: 0, xEnd: 1, yTopFrac: GROUND_FRAC, tier: 0 };
+
+  function getPlatformAtX(x){
+    const xFrac = x / gW;
+    for(const p of PLATFORM_SEGMENTS){
+      if(xFrac >= p.xStart && xFrac < p.xEnd) return p;
+    }
+    return BASE_FLOOR;
+  }
+
+  function waterY(){ return gH * WATERLINE_FRAC; }
+
   const CHAR_W = 28, CHAR_H = 36;
+
+  // Better-looking Miffy: draw a sprite when available.
+  // If the sprite hasn't loaded yet, fall back to the existing vector drawing.
+  let miffySpriteImg = null;
+  let miffySpriteReady = false;
+  const miffySpriteLoader = new Image();
+  miffySpriteLoader.src = 'assets/miffy.png';
+  miffySpriteLoader.onload = () => {
+    miffySpriteImg = miffySpriteLoader;
+    miffySpriteReady = true;
+  };
   
   let miffy = {
     x: 120, y: 0, vx: 0, vy: 0,
-    onGround: false, facing: 1,
+    onGround: false, tier: 0, facing: 1,
     walkFrame: 0, walkTick: 0,
     isJumping: false, wasOnGround: false,
     stillTimer: 0,
@@ -797,6 +869,25 @@
     ctx.ellipse(0, 2, CHAR_W*0.55, 5, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.restore();
+
+    // Sprite branch (primary)
+    if(miffySpriteReady && miffySpriteImg) {
+      // Keep the sprite's natural aspect ratio (avoid "compressed" look).
+      const naturalW = miffySpriteImg.naturalWidth || miffySpriteImg.width || CHAR_W;
+      const naturalH = miffySpriteImg.naturalHeight || miffySpriteImg.height || CHAR_H;
+      const sprH = CHAR_H * 1.45; // taller than the old vector proportions
+      const sprW = sprH * (naturalW / naturalH);
+      // Anchor the sprite's bottom near the same ground contact as the vector legs.
+      const footOffset = 11;
+      const walkBob = Math.sin(walkFrame * 0.35) * 1.4;
+
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(miffySpriteImg, -sprW/2, -sprH + footOffset + walkBob, sprW, sprH);
+
+      // Remove scarf recoloring overlay: the sprite already contains the scarf.
+      ctx.restore();
+      return;
+    }
   
     // Legs (walking animation)
     const legSwing = Math.sin(walkFrame * 0.35) * 7;
@@ -838,8 +929,8 @@
     // Scarf (color changes by zone)
     ctx.restore();
   
-    const zoneIdx = getZoneAt(miffy.x / gW);
-    const scarfColor = ZONES[zoneIdx].color;
+    const rowIdx = miffy.tier ?? 0;
+    const scarfColor = ROWS_CONFIG[rowIdx].color;
     ctx.save();
     ctx.fillStyle = scarfColor;
     ctx.globalAlpha = 0.85;
@@ -1023,6 +1114,53 @@
       zonePulse[i] *= 0.88;
     });
   }
+
+  // ---- WATER + PLATFORMS ----
+  function drawWaterAndPlatforms(ctx, W, H, todBlend, time) {
+    const wy = H * WATERLINE_FRAC;
+
+    // Water overlay
+    const waterGrad = ctx.createLinearGradient(0, wy, 0, H);
+    waterGrad.addColorStop(0, 'rgba(30,120,190,.10)');
+    waterGrad.addColorStop(0.45, 'rgba(30,120,190,.20)');
+    waterGrad.addColorStop(1, 'rgba(10,25,60,.34)');
+    ctx.fillStyle = waterGrad;
+    ctx.fillRect(0, wy, W, H - wy);
+
+    // Surface shimmer line
+    ctx.save();
+    const waveAmp = Math.max(2, H * 0.01);
+    ctx.strokeStyle = 'rgba(255,255,255,.16)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 12) {
+      const yy = wy + Math.sin(time * 0.002 + x * 0.02) * waveAmp;
+      if (x === 0) ctx.moveTo(x, yy);
+      else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // Platform tops (collision surfaces live in updateGame)
+    const thickness = Math.max(10, Math.floor(H * 0.02));
+    PLATFORM_SEGMENTS.forEach(p => {
+      const xS = p.xStart * W;
+      const xE = p.xEnd * W;
+      const yTop = p.yTopFrac * H;
+      const rowCol = ROWS_CONFIG[p.tier].color;
+      const submerged = yTop > wy;
+
+      ctx.save();
+      ctx.fillStyle = submerged ? 'rgba(18,60,90,.55)' : todBlend.groundDark;
+      ctx.fillRect(xS, yTop, xE - xS, thickness);
+
+      // Row-colored top edge
+      ctx.globalAlpha = submerged ? 0.28 : 0.55;
+      ctx.fillStyle = rowCol;
+      ctx.fillRect(xS, yTop - 1, xE - xS, 2);
+      ctx.restore();
+    });
+  }
   
   function hexToRgbArr(hex) {
     return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
@@ -1184,30 +1322,44 @@
     // Clamp X
     miffy.x = Math.max(CHAR_W/2, Math.min(gW - CHAR_W/2, miffy.x));
   
-    // Ground collision
+    // Platform collision (including submerged platforms).
+    // We set onGround based on where the player "stands" at the current x position.
     const gY = groundY();
-    if(miffy.y >= gY) {
-      miffy.y = gY;
-      if(miffy.vy > 2) {
-        // landed from jump -> accent!
+    miffy.onGround = false;
+    const platform = getPlatformAtX(miffy.x);
+    const platformY = platform.yTopFrac * gH;
+
+    if(miffy.y >= platformY) {
+      // landed from above -> accent!
+      if(miffy.vy > 2 && !wasOnGround) {
         miffy.justLanded = true;
         miffy.landedTimer = 12;
-        spawnJumpSplat();
+        miffy.tier = platform.tier;
+        spawnJumpSplat(platformY, miffy.tier);
         // stamp full probability at current step
-        const xFrac = miffy.x / gW;
-        const zoneIdx = getZoneAt(xFrac);
-        const rowIdx = ZONES[zoneIdx].rowIdx;
         const col = gA.ph;
-        gA.grid[rowIdx][col] = 1.0;
-        if(ROWS_CONFIG[rowIdx].type==='pitched') assignPitch(gA, rowIdx, col);
+        gA.grid[miffy.tier][col] = 1.0;
+        if(ROWS_CONFIG[miffy.tier].type==='pitched') assignPitch(gA, miffy.tier, col);
         render();
-        zonePulse[zoneIdx] = 1.0;
+        document.getElementById('hud-zone').textContent = ROWS_CONFIG[miffy.tier].full;
+        document.getElementById('hud-zone').style.color = ROWS_CONFIG[miffy.tier].color;
         showHudAction('accent! ✦');
       }
+
+      miffy.y = platformY;
       miffy.vy = 0;
       miffy.onGround = true;
+      miffy.tier = platform.tier;
       miffy.isJumping = false;
       miffy.earWiggle = (miffy.justLanded ? Math.PI*0.5 : miffy.earWiggle);
+    }
+
+    // Underwater mode (LFO): based on contact line vs waterline.
+    const wy = waterY();
+    const underwaterNow = miffy.y > wy + 0.5;
+    const depth01 = Math.max(0, Math.min(1, (miffy.y - wy) / (gH * 0.25)));
+    if(underwaterNow !== underwaterActive || Math.abs(depth01 - underwaterDepth01) > 0.06) {
+      setUnderwater(underwaterNow, depth01);
     }
   
     // ear wiggle decay
@@ -1228,9 +1380,7 @@
     if(!isMoving) {
       miffy.stillTimer++;
       if(miffy.stillTimer > 50 && paintMode !== 'bias') {
-        const xFrac = miffy.x / gW;
-        const zoneIdx = getZoneAt(xFrac);
-        erodeAroundGame(ZONES[zoneIdx].rowIdx, xFrac);
+        erodeAroundGame(miffy.tier, miffy.x / gW);
         if(miffy.stillTimer % 30 === 0) showHudAction('erode…');
       }
     } else {
@@ -1241,15 +1391,13 @@
     footstepCooldown--;
     if(Math.abs(miffy.vx) > 0.5 && miffy.onGround && footstepCooldown <= 0) {
       footstepCooldown = 10;
-      const xFrac = miffy.x / gW;
-      const zoneIdx = getZoneAt(xFrac);
-      const rowIdx = ZONES[zoneIdx].rowIdx;
+      const rowIdx = miffy.tier;
   
       // Add trail
       trails.push({
         x: miffy.x + (Math.random()-0.5)*8,
         y: gY - 1 + (Math.random()-0.5)*4,
-        color: ZONES[zoneIdx].color,
+        color: ROWS_CONFIG[rowIdx].color,
         alpha: 0.7,
         r: 5 + Math.random()*5,
       });
@@ -1257,11 +1405,10 @@
       // Paint grid
       if(!frozen) {
         paintGridFromGame(rowIdx, paintMode==='erase'?0:PROB_LEVELS[1+Math.floor(Math.random()*2)]);
-        zonePulse[zoneIdx] = Math.min(1, zonePulse[zoneIdx]+0.3);
       }
   
-      document.getElementById('hud-zone').textContent = ZONES[zoneIdx].name;
-      document.getElementById('hud-zone').style.color = ZONES[zoneIdx].color;
+      document.getElementById('hud-zone').textContent = ROWS_CONFIG[rowIdx].full;
+      document.getElementById('hud-zone').style.color = ROWS_CONFIG[rowIdx].color;
     }
   
     // Fade trails
@@ -1312,11 +1459,10 @@
     todTransition.t = Math.min(1, todTransition.t + 0.008);
   }
   
-  function spawnJumpSplat() {
-    const gY = groundY();
-    const xFrac = miffy.x / gW;
-    const zoneIdx = getZoneAt(xFrac);
-    const col = ZONES[zoneIdx].color;
+  function spawnJumpSplat(platY, rowIdx) {
+    const gY = platY ?? groundY();
+    const ridx = (rowIdx ?? miffy.tier ?? 0);
+    const col = ROWS_CONFIG[ridx].color;
     const count = 18 + Math.floor(Math.random()*12);
     const particles = [];
     for(let i=0;i<count;i++) {
@@ -1327,10 +1473,10 @@
     splats.push({x:miffy.x, y:gY, color:col, age:0, particles});
   
     // Paint adjacent cells too
-    const rowIdx = ZONES[zoneIdx].rowIdx;
+    const adjRow = ridx;
     for(let dc=-1;dc<=1;dc++) {
       const c=(gA.ph+dc+COLS_A)%COLS_A;
-      if(gA.grid[rowIdx][c] < 1) gA.grid[rowIdx][c] = Math.min(1, gA.grid[rowIdx][c]+0.33);
+      if(gA.grid[adjRow][c] < 1) gA.grid[adjRow][c] = Math.min(1, gA.grid[adjRow][c]+0.33);
     }
     render();
   }
@@ -1344,7 +1490,7 @@
     const gY = groundY();
   
     drawWorld(gctx, W, H, todBlend, gameTime);
-    drawZoneBands(gctx, W, H, gY, todBlend);
+    drawWaterAndPlatforms(gctx, W, H, todBlend, gameTime);
   
     // Trails (paint strokes on ground)
     trails.forEach(t => {
@@ -1362,7 +1508,7 @@
       s.particles.forEach(p => {
         gctx.save();
         gctx.globalAlpha = p.life * 0.85;
-        gctx.fillStyle = s.color || ZONES[getZoneAt(s.x/gW)].color;
+        gctx.fillStyle = s.color || ROWS_CONFIG[getPlatformAtX(s.x).tier].color;
         gctx.beginPath();
         gctx.arc(s.x + p.x, s.y + p.y, 3*p.life, 0, Math.PI*2);
         gctx.fill();
@@ -1425,7 +1571,13 @@
     gameCanvas.width = gW * devicePixelRatio;
     gameCanvas.height = gH * devicePixelRatio;
     gctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-    miffy.y = groundY();
+    // Snap to whatever platform exists at the current x position.
+    miffy.x = Math.max(CHAR_W/2, Math.min(gW - CHAR_W/2, miffy.x));
+    const platform = getPlatformAtX(miffy.x);
+    miffy.y = platform.yTopFrac * gH;
+    miffy.vy = 0;
+    miffy.onGround = true;
+    miffy.tier = platform.tier;
   }
   
   let lastGameTime = 0;
