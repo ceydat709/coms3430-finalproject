@@ -21,7 +21,33 @@
   .blog-card h2{font-size:24px;line-height:1.15;color:#263c45;margin-bottom:12px}
   .blog-card p{font-size:15px;line-height:1.75;color:#4f6670;margin-top:12px}
   .blog-card p:first-of-type{margin-top:0}
+  .blog-card p code{
+    font-family:inherit;
+    font-size:1em;
+    color:#355261;
+    background:rgba(57,127,153,.08);
+    padding:0 3px;
+    border-radius:4px;
+  }
   .blog-callout{border-left:4px solid var(--accent);padding:13px 15px;margin-top:14px;border-radius:8px;background:rgba(216,117,144,.08);color:#5b5360;font-size:14px;line-height:1.6}
+  .blog-code-title{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#397f99}
+  .blog-code{
+    margin-top:8px;
+    padding:14px 16px;
+    border-radius:10px;
+    background:#07131a;
+    color:#d7f7ff;
+    border:1px solid rgba(81,152,176,.35);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    overflow:auto;
+  }
+  .blog-code code{
+    display:block;
+    white-space:pre-wrap;
+    font-family:var(--mono);
+    font-size:12px;
+    line-height:1.65;
+  }
   footer a{color:#397f99;text-decoration:none}
   footer a:hover{text-decoration:underline}
   @media(max-width:760px){
@@ -70,12 +96,78 @@
 
         <section class="blog-card" id="implementation">
           <h2>Implementation</h2>
-          <p>The main sequencer has two grids. Grid A is the main 16-step grid, and Grid B has a variable length. Each grid stores information about which cells are active, which cells have bias, what pitches are assigned to melodic cells, and how strong each note should be. The rows are tied to musical roles: some are percussion rows, and some are pitched rows.</p>
-          <p>The percussion sounds are generated with browser audio. Instead of relying only on pre-recorded loops, the project creates drum-like sounds using oscillators, noise, filters, gain envelopes, and distortion. This gave us more control over the sound palettes. The different kits, like analog, 808, dust, metal, and bit, change the character of the percussion.</p>
-          <p>The melodic part uses chord data and pitch sets. Each chord has notes for a pad sound, a high melody scale, and a low melody scale. The chord progression moves using a small transition table. This is one of the places where the Markov chain idea shows up most clearly: each chord has probabilities for what chord might come next. Because of that, the progression has variation, but it still stays within a musical structure.</p>
-          <p>The grid evolution is also probability-based. A cell can stay active, turn off, or become active based on parameters like density, repeat, smoothness, chaos, and row behavior. Density controls how full the pattern tends to be. Repeat makes active cells more likely to continue. Smoothness helps neighboring cells influence each other, which makes patterns feel less jumpy. Chaos adds randomness so the pattern can keep changing.</p>
-          <p>The game world sits on top of this musical system. The player has a position, velocity, jump state, direction, and movement state. The player's location corresponds to different musical rows, so the world helps explain the roles of the kick, snare, hi-hat, clap, and melody parts. This means the character is not just decorative. It gives the generated music a more playful visual context.</p>
-          <p>The time-of-day system changes both the visuals and the music. Each time of day has its own sky colors, ground colors, environmental effects, and target music settings. When the user switches from dawn to night, for example, the scene changes visually, but the tempo, density, chaos, repeat, and smoothness also shift. This helped us connect the emotional tone of the visuals with the emotional tone of the sound.</p>
+          <p>In our implementation, the sequencer is built around six fixed musical rows defined in <code>ROWS_CONFIG</code>: kick, snare, hi-hat, clap, high melody, and low melody. That mapping is not just visual. We use it throughout the whole project for row colors, the platform zones in the game world, the type of sound each row triggers, and whether the row is treated as percussion or pitched material. In other words, the game, the grid, and the audio engine are all sharing the same row model instead of being separate systems.</p>
+          <div class="blog-code-title">Row Configuration</div>
+          <pre class="blog-code"><code>const ROWS_CONFIG = [
+  { id:'bd',abbr:'bd',full:'kick',     type:'drum',   color:'#579fbd' },
+  { id:'sd',abbr:'sd',full:'snare',    type:'drum',   color:'#4a9d82' },
+  { id:'hh',abbr:'hh',full:'hi-hat',   type:'drum',   color:'#d99a5f' },
+  { id:'cp',abbr:'cp',full:'clap',     type:'drum',   color:'#d87590' },
+  { id:'m1',abbr:'hi',full:'melody hi',type:'pitched',register:'hi',color:'#8f8fbc' },
+  { id:'m2',abbr:'lo',full:'melody lo',type:'pitched',register:'lo',color:'#6f8f63' },
+];
+const NROWS=ROWS_CONFIG.length, COLS_A=16;
+let COLS_B=13;</code></pre>
+          <p>The most clearly Markov part of the project is the chord engine. We store a set of chords in <code>CHORDS</code>, where each chord includes the pad tones, a high melody scale, and a low melody scale. Then we define a transition matrix in <code>CHORD_TRANS</code>. The function <code>markovNextChord(i)</code> samples the next chord by subtracting a random number through the weights in the current row. This means the harmony is not fully random. It moves according to the transition probabilities we wrote for each chord state.</p>
+          <div class="blog-code-title">Chord Markov Chain</div>
+          <pre class="blog-code"><code>const CHORD_TRANS=[
+  [0.05,0.25,0.15,0.25,0.10,0.10,0.05,0.05],
+  [0.30,0.05,0.10,0.10,0.05,0.20,0.10,0.10],
+  [0.20,0.10,0.05,0.30,0.15,0.10,0.05,0.05],
+  [0.35,0.15,0.10,0.05,0.10,0.10,0.10,0.05],
+  [0.10,0.15,0.10,0.20,0.05,0.25,0.10,0.05],
+  [0.15,0.20,0.05,0.15,0.15,0.05,0.15,0.10],
+  [0.10,0.10,0.10,0.10,0.10,0.15,0.05,0.30],
+  [0.30,0.10,0.15,0.15,0.10,0.10,0.05,0.05],
+];
+function markovNextChord(i){
+  const w=CHORD_TRANS[i];
+  let r=Math.random();
+  for(let j=0;j&lt;w.length;j++){
+    r-=w[j];
+    if(r&lt;=0)return j;
+  }
+  return 0;
+}</code></pre>
+          <p>The rhythmic grid itself is implemented as two separate sequencers, <code>gA</code> and <code>gB</code>. Each grid stores four kinds of information per cell: whether the cell is active, whether it is biased, what pitch it holds if it is melodic, and what velocity it should play with. We create those data structures in <code>makeGrid(cols)</code>, and then we seed Grid A with a hand-authored starting pattern. That seed pattern gives the system an intentional rhythmic starting point before the evolution begins.</p>
+          <div class="blog-code-title">Grid Data Structure</div>
+          <pre class="blog-code"><code>function makeGrid(cols){
+  return {
+    grid:Array.from({length:NROWS},()=>new Array(cols).fill(0)),
+    biasGrid:Array.from({length:NROWS},()=>new Array(cols).fill(false)),
+    pitchGrid:Array.from({length:NROWS},()=>new Array(cols).fill(null)),
+    velGrid:Array.from({length:NROWS},()=>Array.from({length:cols},()=>.7+Math.random()*.5)),
+    ph:0,
+    cols
+  };
+}
+let gA=makeGrid(COLS_A);
+let gB=makeGrid(COLS_B);</code></pre>
+          <p>The grid evolution rule is still probability-based, but it is not a strict Markov transition matrix like the chord system. Instead, each cell computes a probability of staying on or turning on based on its current state, the global controls, and its local neighborhood. In practice, this means <code>density</code> affects how full the pattern tends to become, <code>repeat</code> helps active notes persist, <code>smooth</code> lets neighboring cells influence one another, and <code>chaos</code> adds randomness so the pattern does not get stuck. This part of the implementation is closer to the cellular automata ideas from class than to a pure first-order Markov chain.</p>
+          <div class="blog-code-title">Probability-Based Grid Evolution</div>
+          <pre class="blog-code"><code>function evolveGrid(g){
+  const{chaos,density,rep,smooth}=params,tod=getTODBlend();
+  const effChaos=Math.max(0,Math.min(1,chaos+tod.chaosAdd+orbBoost*0.16));
+  const effDensity=Math.max(0,Math.min(1,density+tod.densityAdd+orbBoost*0.12));
+  g.grid=g.grid.map((row,r)=>row.map((cell,c)=>{
+    const isPitched=ROWS_CONFIG[r].type==='pitched'; let bias=0;
+    for(let br=Math.max(0,r-1);br&lt;=Math.min(NROWS-1,r+1);br++)
+      for(let bc=Math.max(0,c-1);bc&lt;=Math.min(g.cols-1,c+1);bc++)
+        if(g.biasGrid[br][bc])bias+=.12;
+    bias=Math.min(bias,.4); const pull=rowPull[r]*.3;
+    let p=cell?(isPitched?.6+rep*.2:.55+rep*.15):(isPitched?effDensity*.25:effDensity*.4);
+    p+=bias+pull;
+    const prev=(c-1+g.cols)%g.cols,next=(c+1)%g.cols,nb=(g.grid[r][prev]+g.grid[r][next])/2;
+    if(cell)p=p*(1-smooth*.15)+smooth*.15*(nb&gt;.5?.9:.1);
+    p+=(Math.random()-.5)*effChaos;
+    const nxt=Math.random()&lt;Math.max(.02,Math.min(.97,p))?1:0;
+    if(nxt&amp;&amp;!cell&amp;&amp;isPitched)assignPitch(g,r,c);
+    if(nxt&amp;&amp;cell&amp;&amp;isPitched&amp;&amp;Math.random()&lt;.15)assignPitch(g,r,c);
+    return nxt;
+  }));
+}</code></pre>
+          <p>The browser audio layer is also implemented directly in code rather than relying on fixed loops. The drum kits are defined as parameter sets for oscillators, filtered noise, gain envelopes, and distortion. That is why the same grid can sound very different depending on whether the user is hearing the analog, 808, dust, metal, or bit kit. For melody, we load sampled electric piano and string ensemble sounds, then assign pitches from the current chord’s high or low scale. This lets the rhythmic system and the harmonic system stay connected.</p>
+          <p>Finally, the game world is not separate from the sequencer. The world uses the same row model through the <code>ZONES</code> array, which maps regions of the level to the kick, snare, hi-hat, clap, and melody rows. The player’s movement helps explain the structure of the music visually, and collecting an orb triggers a real musical event in code: it advances the harmony with <code>markovNextChord()</code>, reassigns pitches, creates a short remix drop, and boosts coupling between the two grids. That is the part we are happiest with, because the project is not just displaying a sequencer. The world itself becomes part of the composition system.</p>
         </section>
 
         <section class="blog-card" id="challenges">

@@ -95,7 +95,7 @@ header{
   font-family:var(--pixel);font-size:6px;letter-spacing:.03em;color:var(--text);
 }
 #statebar span{display:flex;align-items:center;padding:3px 8px;border-right:2px solid #404040;border-left:1px solid #fff;}
-#statebar b{color:var(--accent);font-weight:normal;}
+#statebar b{color:var(--accent);font-weight:normal;margin-left:4px;}
 
 /* ---- MAIN WRAP ---- */
 #wrap{flex:1;padding:8px;display:flex;flex-direction:column;gap:10px;align-items:center;}
@@ -117,11 +117,11 @@ header{
 /* ---- MUSIC GUIDE ---- */
 .music-guide-panel{
   background:var(--win-bg);border-style:solid;border-width:2px;border-color:#fff #404040 #404040 #fff;
-  padding:0 0 8px;max-width:100%;
+  padding:0 0 8px;max-width:100%;min-width:0;width:100%;overflow:hidden;
   position:sticky;top:74px;
 }
 .music-guide-title{
-  padding:5px 8px;background:linear-gradient(90deg,#2a4a2a,#3d6a3d);font-family:var(--pixel);font-size:6px;letter-spacing:.06em;
+  padding:5px 8px;background:linear-gradient(90deg,#000080,#1084d0);font-family:var(--pixel);font-size:6px;letter-spacing:.06em;
   text-transform:uppercase;color:#fff;border-bottom:2px solid #404040;
 }
 .music-guide-steps{
@@ -133,6 +133,125 @@ header{
 .strudel-label{font-family:var(--pixel);font-size:5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
 .loading-line{
   font-family:var(--pixel);font-size:5px;color:var(--muted);letter-spacing:.02em;padding:0 12px 4px;
+}
+.control-launcher{
+  margin:10px;
+  padding-top:10px;
+  border-top:2px solid #404040;
+  box-shadow:0 -1px 0 #fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.control-launcher-title{
+  font-family:var(--pixel);font-size:5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+  width:100%;
+}
+.desktop-panels{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px 10px;
+  align-items:start;
+  justify-content:center;
+  width:fit-content;
+  max-width:100%;
+  margin:0 auto;
+}
+.desktop-panel{
+  appearance:none;
+  background:transparent;
+  border:none;
+  padding:6px 4px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  cursor:pointer;
+  font-family:inherit;
+}
+.desktop-panel:hover .desktop-panel-icon{transform:translateY(-1px);}
+.desktop-panel:focus-visible{outline:1px dotted #000;outline-offset:2px;}
+.desktop-panel-label{
+  font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:lowercase;color:#111;text-align:center;line-height:1.1;
+  background:#ffffff;border:1px solid #7a7a7a;padding:1px 6px;box-shadow:1px 1px 0 rgba(0,0,0,.16);
+}
+.desktop-panel-icon{
+  width:54px;height:42px;position:relative;background:transparent;
+}
+.desktop-panel-icon::before,.desktop-panel-icon::after{content:'';position:absolute;display:block;}
+.desktop-panel-icon.tempo::before{
+  left:10px;top:2px;width:30px;height:30px;border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 50%,#f1f1ee 0 4px,#c8c7bf 4px 7px,#6f6f69 7px 8px,transparent 8px),
+    conic-gradient(from 18deg,#fbf7e6 0 18%,#ead4a0 18% 30%,#d4cec0 30% 41%,#d7f08f 41% 46%,#a3a8ab 46% 52%,#f7eecf 52% 67%,#e2c98f 67% 79%,#fef7e6 79% 100%);
+  border:1px solid #9fa2a8;
+  box-shadow:
+    -1px 0 0 #d4d5d9,
+    1px 0 0 #d4d5d9,
+    0 -1px 0 #d4d5d9,
+    0 1px 0 #6b6d72;
+}
+.desktop-panel-icon.tempo::after{
+  display:none;
+}
+.desktop-panel-icon.rowpull::before{
+  left:8px;top:11px;width:38px;height:22px;background:
+    linear-gradient(135deg,transparent 0 8px,#fbf59b 8px),
+    linear-gradient(#fbf59b,#fff4aa);
+  border:1px solid #8b8908;
+  box-shadow:
+    1px 0 0 #1e1e1e,
+    0 1px 0 #1e1e1e,
+    3px 3px 0 rgba(95,92,0,.9);
+}
+.desktop-panel-icon.rowpull::after{
+  left:11px;top:9px;width:17px;height:7px;background:#fbf59b;
+  border-top:1px solid #fff7ca;
+  border-left:1px solid #fff7ca;
+  border-right:1px solid #8b8908;
+}
+.control-window{
+  margin:10px auto 0;
+  border-style:solid;border-width:2px;border-color:#fff #404040 #404040 #fff;
+  background:var(--win-bg);
+  width:100%;
+  max-width:100%;
+  overflow:hidden;
+}
+.control-window.is-hidden,.desktop-panels.is-hidden{display:none;}
+.control-window-bar{
+  display:flex;align-items:center;gap:8px;padding:4px 6px;
+  background:linear-gradient(90deg,#2a2a6a,#4a4a9a);color:#fff;
+  font-family:var(--pixel);font-size:5px;letter-spacing:.06em;text-transform:uppercase;
+}
+.control-window-bar span:first-child{color:#ffcc66;}
+.control-window-close{
+  margin-left:auto;
+  width:18px;height:18px;padding:0;
+  background:var(--button-face);color:#000;cursor:pointer;
+  border-style:solid;border-width:2px;border-color:#fff #404040 #404040 #fff;
+  font-family:var(--pixel);font-size:6px;line-height:1;
+}
+.control-window-body{padding:6px;display:grid;gap:6px;min-width:0;}
+.control-pane{display:none;gap:6px;}
+.control-pane.is-active{display:grid;}
+.control-mini-title{
+  font-family:var(--pixel);font-size:5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  padding:2px 4px;border-top:1px solid #404040;border-bottom:1px solid #fff;
+}
+.panel-block{
+  border-style:solid;border-width:2px;border-color:#404040 #fff #fff #404040;
+  background:var(--win-bg);padding:5px;display:grid;gap:5px;min-width:0;
+}
+.panel-slider{
+  display:grid;grid-template-columns:42px minmax(0,1fr) 34px;gap:5px;align-items:center;min-width:0;
+}
+.panel-slider label{
+  font-family:var(--pixel);font-size:5px;letter-spacing:.05em;text-transform:uppercase;color:#333;
+}
+.panel-slider input{min-width:0;width:100%;}
+.panel-slider output{
+  font-family:var(--pixel);font-size:6px;color:var(--accent);text-align:right;
 }
 
 /* ---- GRID PANELS ---- */
@@ -147,7 +266,7 @@ canvas{display:block;width:100%;cursor:default;touch-action:none;image-rendering
 
 /* ---- INTERFERENCE ---- */
 #int-section{background:var(--win-bg);border-style:solid;border-width:2px;border-color:#fff #404040 #404040 #fff;flex-shrink:0;}
-#int-header{display:flex;align-items:center;gap:8px;padding:3px 6px;background:linear-gradient(90deg,#004040,#007070);font-family:var(--pixel);font-size:6px;letter-spacing:.04em;text-transform:uppercase;}
+#int-header{display:flex;align-items:center;gap:8px;padding:3px 6px;background:linear-gradient(90deg,#000080,#1084d0);font-family:var(--pixel);font-size:6px;letter-spacing:.04em;text-transform:uppercase;}
 .int-title{color:#fff;font-weight:normal;}
 #coupling-badge{padding:1px 5px;font-size:5px;border:1px solid #404040;color:#00ffcc;background:#003030;}
 #phase-display{margin-left:auto;color:rgba(255,255,255,.7);font-size:5px;}
@@ -168,9 +287,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 
 /* ---- ROW PULL ---- */
 .pull-item{display:flex;align-items:center;gap:4px;padding:2px 4px;background:var(--win-bg);margin:0 4px;border-top:1px solid #404040;border-left:1px solid #404040;border-right:1px solid #fff;border-bottom:1px solid #fff;}
-.pull-item .rp-name{font-family:var(--pixel);font-size:6px;width:20px;flex-shrink:0;}
-.pull-item .rp-sub{font-family:var(--mono);font-size:11px;color:var(--muted);width:36px;flex-shrink:0;}
-.pull-item input{flex:1;}
+.pull-item{display:grid;grid-template-columns:22px 42px minmax(0,1fr) 30px;gap:4px;align-items:center;}
+.pull-item .rp-name{font-family:var(--pixel);font-size:6px;width:auto;flex-shrink:1;}
+.pull-item .rp-sub{font-family:var(--mono);font-size:11px;color:var(--muted);width:auto;flex-shrink:1;line-height:1.15;}
+.pull-item input{flex:initial;min-width:0;width:100%;}
 .pull-item .rp-val{font-family:var(--pixel);font-size:5px;color:var(--muted);width:28px;text-align:right;}
 
 /* ---- CHORD ---- */
@@ -278,10 +398,42 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
         <li><strong>Jump</strong> onto different sound zones.</li>
         <li><strong>Change time</strong> to shift the mood.</li>
         <li><strong>Collect orbs</strong> to remix the pattern.</li>
+        <li><strong>Use control panels</strong> to use sliders.</li>
       </ol>
       <div class="strudel-section">
         <div class="strudel-label">Strudel code</div>
         <div id="strudel-box">note("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~")</div>
+      </div>
+      <div class="control-launcher">
+        <div class="control-launcher-title">control panels</div>
+        <div id="desktop-panels" class="desktop-panels">
+          <button class="desktop-panel" type="button" data-panel="tempo">
+            <span class="desktop-panel-icon tempo" aria-hidden="true"></span>
+            <span class="desktop-panel-label">Tempo</span>
+          </button>
+          <button class="desktop-panel" type="button" data-panel="rowpull">
+            <span class="desktop-panel-icon rowpull" aria-hidden="true"></span>
+            <span class="desktop-panel-label">Row Pull</span>
+          </button>
+        </div>
+        <section id="control-window" class="control-window is-hidden" aria-live="polite">
+          <div class="control-window-bar">
+            <span id="control-window-title">controls</span>
+            <button id="control-window-close" class="control-window-close" type="button" aria-label="Close panel">X</button>
+          </div>
+          <div class="control-window-body">
+            <div id="control-pane-tempo" class="control-pane" data-pane="tempo">
+              <div class="control-mini-title">global controls</div>
+              <div class="panel-block" id="tempo-controls"></div>
+              <div class="control-mini-title">interference</div>
+              <div class="panel-block" id="interference-controls"></div>
+            </div>
+            <div id="control-pane-rowpull" class="control-pane" data-pane="rowpull">
+              <div class="control-mini-title">grid bias</div>
+              <div class="panel-block" id="row-pull-wrap"></div>
+            </div>
+          </div>
+        </section>
       </div>
     </aside>
     <main id="play-stage">
@@ -302,7 +454,6 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
         <span>row: <span class="hud-zone" id="hud-zone">kick</span></span>
         <span><span class="hud-key">←→</span> walk</span>
         <span><span class="hud-key">↑</span> jump</span>
-        <span><span class="hud-key">tod</span> mood</span>
         <span id="hud-action" style="color:#ffaa44;min-width:60px;"></span>
       </div>
     </div>
@@ -354,8 +505,6 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
         <span style="margin-left:auto">✖</span>
       </div>
       <div class="intro-card-body">
-        <div class="intro-kicker">// sound grid v1.0</div>
-        <h1>Play first.<br>Then move.</h1>
         <p><strong>Press Play</strong>, then move Miffy through the world. Collect remix orbs, switch time of day, and watch the grids show how the Markov sequencer changes the music.</p>
         <div class="intro-steps">
           <div><b>Play</b><span>Starts the samples and sequencer.</span></div>

@@ -55,7 +55,7 @@
     bit:{bd:{wave:'square',start:110,end:39,dur:.18,gain:.68,click:.32,drive:.7},sd:{tone:210,noiseFreq:2300,dur:.13,gain:.34,body:.16,drive:.75},hh:{freq:7600,dur:.045,gain:.22,metal:.35,drive:.75},cp:{freq:2800,dur:.09,gain:.28,spread:.016,drive:.75},bass:{wave:'square',dur:.18,gain:.42,drop:.58,drive:.65}},
   };
   const drumKit='analog';
-  const BASE_BPM=108;
+  let baseBpm=108;
   
   // ---- TIME OF DAY CONFIGS ----
   const TOD_CONFIGS={
@@ -92,7 +92,7 @@
   let interferenceHistory=new Array(INT_HISTORY).fill(0);
   let ripples=[],particles2=[],lastFlash=0;
 
-  function effectiveBpm(){const t=getTODBlend();return Math.max(40,Math.round(BASE_BPM*t.bpmMult));}
+  function effectiveBpm(){const t=getTODBlend();return Math.max(40,Math.round(baseBpm*t.bpmMult));}
   function updateCouplingBadge(){const el=document.getElementById('coupling-badge');if(!el)return;const eff=Math.min(1,coupling+orbBoost*0.55);el.textContent=`coupling ${eff.toFixed(2)}`;}
   function refreshChordHud(){
     const a=CHORDS[chordIdx].name,b=CHORDS[nextChordIdx].name;
@@ -403,7 +403,9 @@
       p+=bias+pull;const prev=(c-1+g.cols)%g.cols,next=(c+1)%g.cols,nb=(g.grid[r][prev]+g.grid[r][next])/2;
       if(cell)p=p*(1-smooth*.15)+smooth*.15*(nb>.5?.9:.1);p+=(Math.random()-.5)*effChaos;
       const nxt=Math.random()<Math.max(.02,Math.min(.97,p))?1:0;
-      if(nxt&&!cell&&isPitched)assignPitch(g,r,c);if(nxt&&cell&&isPitched&&Math.random()<.15)assignPitch(g,r,c);return nxt;
+      if(nxt&&!cell&&isPitched)assignPitch(g,r,c);
+      if(nxt&&cell&&isPitched&&Math.random()<.15)assignPitch(g,r,c);
+      return nxt;
     }));
   }
   function applyCoupling(){const effC=Math.min(1,coupling+orbBoost*0.32);if(effC<.01)return;for(let r=0;r<NROWS;r++)for(let c=0;c<COLS_A;c++){const cB=Math.round((c/COLS_A)*gB.cols)%gB.cols;if(gA.grid[r][c]&&!gB.grid[r][cB]&&Math.random()<effC*.14){gB.grid[r][cB]=1;assignPitch(gB,r,cB);}if(gB.grid[r][cB]&&!gA.grid[r][c]&&Math.random()<effC*.08){gA.grid[r][c]=PROB_LEVELS[1];assignPitch(gA,r,c);}}}
@@ -436,6 +438,89 @@
   // ---- ROW PULL UI ----
   const rpWrap=document.getElementById('row-pull-wrap');
   if(rpWrap){ROWS_CONFIG.forEach((rc,r)=>{const div=document.createElement('div');div.className='pull-item';const nm=document.createElement('div');nm.className='rp-name';nm.style.color=COL_COLORS[r];nm.textContent=rc.abbr.toUpperCase();const sub=document.createElement('div');sub.className='rp-sub';sub.textContent=rc.full;const sl=document.createElement('input');sl.type='range';sl.min=-50;sl.max=50;sl.value=0;const val=document.createElement('div');val.className='rp-val';val.textContent='0.00';sl.oninput=()=>{rowPull[r]=parseInt(sl.value)/50;val.textContent=rowPull[r].toFixed(2);};div.append(nm,sub,sl,val);rpWrap.appendChild(div);});}
+
+  function retimePlayback(){
+    if(!playing)return;
+    clearInterval(iv);
+    iv=setInterval(masterStep,60/effectiveBpm()/4*1000);
+  }
+  function updateGridBRatioLabel(){
+    const tag=document.getElementById('b-tag');
+    if(tag)tag.textContent=`${gB.cols} steps · ${(gB.cols/COLS_A).toFixed(3)}×`;
+    const out=document.getElementById('grid-b-ratio-val');
+    if(out)out.textContent=`${gB.cols}/16`;
+  }
+  function setGridBCols(cols){
+    cols=Math.max(8,Math.min(16,cols|0));
+    if(cols===gB.cols)return;
+    COLS_B=cols;
+    gB=makeGrid(COLS_B);
+    gB.ph=0;
+    for(let r=0;r<NROWS;r++)for(let c=0;c<COLS_B;c++)if(Math.random()<.22){gB.grid[r][c]=1;if(ROWS_CONFIG[r].type==='pitched')assignPitch(gB,r,c);}
+    masterTick=0;
+    nextBTick=COLS_A/gB.cols;
+    updateGridBRatioLabel();
+    render();
+  }
+  function setTOD(tod){
+    if(!TOD_CONFIGS[tod]||tod===currentTOD)return;
+    todTransition={from:currentTOD,to:tod,t:0};
+    currentTOD=tod;
+    document.querySelectorAll('.tod-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.tod===tod));
+    retimePlayback();
+  }
+
+  // ---- SIDEBAR CONTROL PANELS ----
+  const desktopPanels=document.getElementById('desktop-panels');
+  const controlWindow=document.getElementById('control-window');
+  const controlWindowTitle=document.getElementById('control-window-title');
+  const controlWindowClose=document.getElementById('control-window-close');
+  const paneTitles={tempo:'tempo',rowpull:'row pull'};
+  function openControlPane(name){
+    if(!desktopPanels||!controlWindow)return;
+    desktopPanels.classList.add('is-hidden');
+    controlWindow.classList.remove('is-hidden');
+    controlWindowTitle.textContent=paneTitles[name]||'controls';
+    document.querySelectorAll('.control-pane').forEach(pane=>pane.classList.toggle('is-active',pane.dataset.pane===name));
+  }
+  function closeControlPane(){
+    if(!desktopPanels||!controlWindow)return;
+    controlWindow.classList.add('is-hidden');
+    desktopPanels.classList.remove('is-hidden');
+    document.querySelectorAll('.control-pane').forEach(pane=>pane.classList.remove('is-active'));
+  }
+  if(desktopPanels)desktopPanels.querySelectorAll('[data-panel]').forEach(btn=>btn.addEventListener('click',()=>openControlPane(btn.dataset.panel)));
+  if(controlWindowClose)controlWindowClose.addEventListener('click',closeControlPane);
+
+  function makeSliderRow({parent,id,label,min,max,step,value,format,onInput}){
+    const row=document.createElement('div');row.className='panel-slider';
+    const lbl=document.createElement('label');lbl.htmlFor=id;lbl.textContent=label;
+    const input=document.createElement('input');input.id=id;input.type='range';input.min=min;input.max=max;input.step=step;input.value=value;
+    const out=document.createElement('output');out.htmlFor=id;out.textContent=format(value);
+    input.addEventListener('input',()=>{
+      const raw=input.step&&input.step!=='1'?parseFloat(input.value):parseInt(input.value,10);
+      onInput(raw);
+      out.textContent=format(raw);
+    });
+    row.append(lbl,input,out);
+    parent.appendChild(row);
+    return input;
+  }
+
+  const tempoControls=document.getElementById('tempo-controls');
+  if(tempoControls){
+    makeSliderRow({parent:tempoControls,id:'tempo-slider',label:'tempo',min:72,max:144,step:1,value:baseBpm,format:v=>String(v),onInput:v=>{baseBpm=v;retimePlayback();}});
+    makeSliderRow({parent:tempoControls,id:'chaos-slider',label:'chaos',min:0,max:100,step:1,value:Math.round(params.chaos*100),format:v=>(v/100).toFixed(2),onInput:v=>{params.chaos=v/100;}});
+    makeSliderRow({parent:tempoControls,id:'density-slider',label:'density',min:0,max:100,step:1,value:Math.round(params.density*100),format:v=>(v/100).toFixed(2),onInput:v=>{params.density=v/100;}});
+    makeSliderRow({parent:tempoControls,id:'repeat-slider',label:'repeat',min:0,max:100,step:1,value:Math.round(params.rep*100),format:v=>(v/100).toFixed(2),onInput:v=>{params.rep=v/100;}});
+    makeSliderRow({parent:tempoControls,id:'smooth-slider',label:'smooth',min:0,max:100,step:1,value:Math.round(params.smooth*100),format:v=>(v/100).toFixed(2),onInput:v=>{params.smooth=v/100;}});
+  }
+  const interferenceControls=document.getElementById('interference-controls');
+  if(interferenceControls){
+    makeSliderRow({parent:interferenceControls,id:'gridb-ratio-mini',label:'b ratio',min:8,max:16,step:1,value:COLS_B,format:v=>`${v}/16`,onInput:v=>{setGridBCols(v);}});
+    makeSliderRow({parent:interferenceControls,id:'coupling-slider',label:'coupling',min:0,max:100,step:1,value:Math.round(coupling*100),format:v=>(v/100).toFixed(2),onInput:v=>{coupling=v/100;updateCouplingBadge();}});
+  }
+  updateGridBRatioLabel();
   
   // ---- CONTROLS ----
   document.getElementById('play').addEventListener('click',async function(){
@@ -833,7 +918,7 @@
   requestAnimationFrame(gameLoop);
 
   // TOD buttons
-  document.querySelectorAll('.tod-btn').forEach(btn=>{btn.addEventListener('click',()=>{const tod=btn.dataset.tod;if(tod===currentTOD)return;todTransition={from:currentTOD,to:tod,t:0};currentTOD=tod;document.querySelectorAll('.tod-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const cfg=TOD_CONFIGS[tod];if(playing){clearInterval(iv);const eff=Math.round(BASE_BPM*cfg.bpmMult);iv=setInterval(masterStep,60/eff/4*1000);}});});
+  document.querySelectorAll('.tod-btn').forEach(btn=>{btn.addEventListener('click',()=>setTOD(btn.dataset.tod));});
 
   // Animation loop
   function animLoop(){if(ripples.length||particles2.length)drawInterference();requestAnimationFrame(animLoop);}
