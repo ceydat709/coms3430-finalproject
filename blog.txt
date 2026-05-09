@@ -1,0 +1,82 @@
+Inspiration / How It Came About
+
+By Kelly and Ceyda
+
+Our project started with the Markov chain lecture. At first, we were thinking about making a fairly simple sequencer: the user would press play, watch a grid of notes evolve, and hear the pattern change over time. That already felt connected to the course because Markov chains are a natural fit for music. A musical pattern can move from one state to another, and each next step can be chosen based on probability instead of being fully random or fully predetermined.
+
+As we kept working, though, the project became less about making a technically correct sequencer and more about exploring a question we found interesting: can a computer-generated system make music that feels like it has a mood? Randomness can make sound, but it does not automatically make something expressive. We wanted to see if we could take a probability-based system and give it more emotional direction through visuals, interaction, and environmental context.
+
+That is where the world/game idea came from. We realized that technical controls and grids can be useful, but they can also feel abstract. We wanted the user to experience the music in a way that felt more playful and personal. Instead of asking the user to change lots of numbers, the user can move a character through a small landscape that represents the musical rows. This made the project feel more like an instrument or a toy, not just a tool.
+
+The different times of day also became important to the idea. Dawn, day, sunset, and night each suggest a different emotional feeling. Day feels brighter and more energetic, while sunset feels slower and warmer. Night feels more sparse and hypnotic. We wanted the visuals and the generated music to support each other so that the user could feel like they were moving through different musical environments.
+
+High-Level Design
+
+The project is built around two connected systems: a generative music sequencer and a small interactive world. The sequencer is the musical engine. It decides which beats, drum sounds, and notes happen over time. The world is the interaction layer. It gives the user a more physical and visual way to shape the sequencer.
+
+We planned the project in three main stages. The first stage was building the base sequencer. This included the grids, rows, columns, playhead, drum voices, melodic rows, and the basic probability rules. The second stage was shaping how the system evolves automatically through parameters like chaos, density, repeat, and smoothness. The third stage was adding the game world, where movement could make the music feel more connected to a visual environment.
+
+The grid interface is meant to make the logic visible. Each row represents a different sound, such as kick, snare, hi-hat, clap, high melody, or low melody. Each column represents a step in time. When the playhead moves across the grid, the user can see which cells are triggering sound. This was important because generative systems can feel confusing if the user cannot tell why something is happening.
+
+We also included an interference pattern section because the project uses two grids running at different lengths. Grid A runs at 16 steps, while Grid B can run at a different number of steps. When two patterns move at different rates, they line up in changing ways. This creates rhythmic interference, almost like two waves crossing each other. We wanted the user to see that relationship visually instead of only hearing it.
+
+Implementation
+
+The main sequencer has two grids. Grid A is the main 16-step grid, and Grid B has a variable length. Each grid stores information about which cells are active, which cells have bias, what pitches are assigned to melodic cells, and how strong each note should be. The rows are tied to musical roles: some are percussion rows, and some are pitched rows.
+
+The percussion sounds are generated with browser audio. Instead of relying only on pre-recorded loops, the project creates drum-like sounds using oscillators, noise, filters, gain envelopes, and distortion. This gave us more control over the sound palettes. The different kits, like analog, 808, dust, metal, and bit, change the character of the percussion.
+
+The melodic part uses chord data and pitch sets. Each chord has notes for a pad sound, a high melody scale, and a low melody scale. The chord progression moves using a small transition table. This is one of the places where the Markov chain idea shows up most clearly: each chord has probabilities for what chord might come next. Because of that, the progression has variation, but it still stays within a musical structure.
+
+The grid evolution is also probability-based. A cell can stay active, turn off, or become active based on parameters like density, repeat, smoothness, chaos, and row behavior. Density controls how full the pattern tends to be. Repeat makes active cells more likely to continue. Smoothness helps neighboring cells influence each other, which makes patterns feel less jumpy. Chaos adds randomness so the pattern can keep changing.
+
+The game world sits on top of this musical system. The player has a position, velocity, jump state, direction, and movement state. The player's location corresponds to different musical rows, so the world helps explain the roles of the kick, snare, hi-hat, clap, and melody parts. This means the character is not just decorative. It gives the generated music a more playful visual context.
+
+The time-of-day system changes both the visuals and the music. Each time of day has its own sky colors, ground colors, environmental effects, and target music settings. When the user switches from dawn to night, for example, the scene changes visually, but the tempo, density, chaos, repeat, and smoothness also shift. This helped us connect the emotional tone of the visuals with the emotional tone of the sound.
+
+Challenges
+
+One of the biggest challenges was making random probabilities sound like music instead of noise. A purely random rhythm can become chaotic very quickly. It might be interesting for a few seconds, but it usually does not feel intentional. We had to add enough structure so the system had a sense of rhythm and continuity.
+
+The repeat and smoothness controls were important for this. Repeat gives the system memory, so it does not completely forget the previous pattern every time it evolves. Smoothness makes nearby cells matter, which helps the pattern feel more connected. The chord system also helped because it kept the melody inside a limited musical world instead of allowing any note at any time.
+
+Another challenge was deciding how much control the user should have. If the system is too automatic, the user might feel like they are just watching it happen. If the system is too manual, then the Markov chain becomes less meaningful. We chose to keep the grid automatic so the probability system stays at the center of the project.
+
+The game interaction was also tricky to balance. We wanted movement to make the system easier to understand, but we did not want every tiny movement to destroy the rhythm. Keeping Miffy as a guide through the musical rows made the game feel connected to the music without making the sequencer completely unpredictable.
+
+Another challenge was making the interface readable. There are a lot of moving parts: two grids, playheads, probability levels, chord names, time-of-day buttons, and the game world. We tried to organize the page so each part had a clear purpose. The grids show the pattern, the interference canvas shows the relationship between the grids, and the world gives the user a playful way to experience the generated music.
+
+What We Learned
+
+This project helped us understand that generative art is not just about randomness. Randomness is useful, but it needs constraints. The more important part is deciding what rules should guide the randomness. In our case, the rules came from rhythm, chord relationships, row roles, probability levels, and user movement.
+
+We also learned that interaction can make a generative system feel more personal. Even if the computer is deciding many of the exact notes, the user's actions still shape the result. Moving the character around makes the music feel less like something being produced by a machine alone and more like a collaboration between the user and the system.
+
+Another thing we learned is that visuals can change how generated music feels. The same kind of rhythm can feel different depending on whether the scene looks like dawn, day, sunset, or night. This made us think more about music as part of an environment instead of something separate from the interface.
+
+How To Use It / How It Works
+
+To use the project, the user presses play to start the sequencer and unlock the browser audio. The two grids begin moving through their steps, triggering drums and notes based on the active cells.
+
+The main interaction is Miffy's world. The character can walk left and right and jump. Different areas of the ground correspond to different musical rows, so the player can see how the world maps onto the kick, snare, hi-hat, clap, and melody parts while the sequencer evolves automatically.
+
+The floating orbs act like remix triggers. Collecting one creates a short drop, reshapes the current rhythm around the playhead, changes the harmony underneath, and briefly makes the two grids influence each other more strongly.
+
+The time-of-day buttons change the atmosphere of the world. Dawn, day, sunset, and night each have different colors and different music settings. This lets the user quickly change the mood of the piece without needing to understand every technical parameter.
+
+What We Are Proud Of
+
+We are proud that the project became more than a basic sequencer. It turned into an interactive music environment where the visuals, movement, probability, and sound all affect each other. The user is not just pressing play and listening. They can shape the pattern through direct editing and through movement.
+
+We are also proud of the way the project connects course concepts to something creative. Markov chains can feel abstract when they are only shown as diagrams or transition matrices. In this project, the same idea becomes something the user can hear and see. The probabilities are not just numbers. They become rhythms, melodies, and changes in mood.
+
+Another part we are proud of is the emotional direction of the project. Even though the music still sometimes sounds computer-generated, it feels more expressive because of the environment around it. The time-of-day system, the chord changes, and the character interaction all help make the generated output feel less mechanical.
+
+Future Improvements
+
+If we had more time, we would want to make the musical generation more sophisticated. The current Markov behavior is useful, but it is still fairly simple. A future version could use more detailed transition data, longer memory, or patterns learned from real music. That said, we would want to approach training data carefully and ethically. If artists' work is used to guide a model, they should be credited, respected, and compensated rather than treated as free data.
+
+We would also like to make the connection between the player and the music even clearer. For example, the character could collect musical objects, unlock new sounds, or leave visible trails that correspond directly to notes in the grid. The world could have more areas, each with its own musical behavior.
+
+We could also make the feedback clearer. The interface already shows the playheads and active cells, but it would be helpful to show when a change came from the time-of-day setting, coupling, or the Markov evolution.
+

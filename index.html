@@ -98,7 +98,42 @@ header{
 #statebar b{color:var(--accent);font-weight:normal;}
 
 /* ---- MAIN WRAP ---- */
-#wrap{flex:1;padding:8px;display:flex;flex-direction:column;gap:8px;}
+#wrap{flex:1;padding:8px;display:flex;flex-direction:column;gap:10px;align-items:center;}
+#play-layout{
+  width:100%;max-width:1180px;display:grid;grid-template-columns:minmax(220px,280px) minmax(0,1fr);
+  gap:10px;align-items:start;
+}
+#play-stage{min-width:0;display:flex;flex-direction:column;gap:8px;}
+
+/* Secondary sequencer feedback — smaller, optional readout */
+#sequencer-feedback{
+  width:100%;
+  display:flex;flex-direction:column;gap:8px;
+  opacity:0.92;
+}
+#sequencer-feedback .grid-tag{font-size:5px;}
+#sequencer-feedback canvas{cursor:default;}
+
+/* ---- MUSIC GUIDE ---- */
+.music-guide-panel{
+  background:var(--win-bg);border-style:solid;border-width:2px;border-color:#fff #404040 #404040 #fff;
+  padding:0 0 8px;max-width:100%;
+  position:sticky;top:74px;
+}
+.music-guide-title{
+  padding:5px 8px;background:linear-gradient(90deg,#2a4a2a,#3d6a3d);font-family:var(--pixel);font-size:6px;letter-spacing:.06em;
+  text-transform:uppercase;color:#fff;border-bottom:2px solid #404040;
+}
+.music-guide-steps{
+  margin:10px 12px 12px 28px;font-family:var(--mono);font-size:13px;color:#333;line-height:1.55;list-style:decimal;
+}
+.music-guide-steps li{margin-bottom:6px;}
+.music-guide-steps strong{color:var(--accent);font-weight:700;}
+.strudel-section{margin:10px 10px 6px;padding-top:8px;border-top:2px solid #404040;box-shadow:0 -1px 0 #fff;}
+.strudel-label{font-family:var(--pixel);font-size:5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.loading-line{
+  font-family:var(--pixel);font-size:5px;color:var(--muted);letter-spacing:.02em;padding:0 12px 4px;
+}
 
 /* ---- GRID PANELS ---- */
 #grids-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex-shrink:0;}
@@ -107,7 +142,7 @@ header{
 .gtag-label{color:#fff;padding:0;border:none;background:none;font-size:6px;}
 .gtag-a{color:#88ccff;}.gtag-b{color:#cc88ff;}
 .gtag-steps{color:rgba(255,255,255,.7);font-size:5px;}
-canvas{display:block;width:100%;cursor:crosshair;touch-action:none;image-rendering:pixelated;}
+canvas{display:block;width:100%;cursor:default;touch-action:none;image-rendering:pixelated;}
 #ca,#cb{border-radius:0;}
 
 /* ---- INTERFERENCE ---- */
@@ -145,7 +180,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .chord-vals{display:flex;gap:16px;margin:4px;padding:4px;border-top:2px solid #404040;border-left:2px solid #404040;border-right:2px solid #fff;border-bottom:2px solid #fff;}
 .chord-big .chord-lbl{font-family:var(--pixel);font-size:5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
 .chord-big .chord-name{font-family:var(--pixel);font-size:12px;color:var(--accent);line-height:1.3;margin-top:2px;}
-#strudel-box{font-family:var(--mono);font-size:12px;color:#00ff44;background:#001a00;padding:4px;word-break:break-all;line-height:1.5;min-height:26px;margin:0 4px 4px;border-top:2px solid #404040;border-left:2px solid #404040;border-right:2px solid #fff;border-bottom:2px solid #fff;}
+#strudel-box{font-family:var(--mono);font-size:12px;color:#00ff44;background:#001a00;padding:5px;word-break:break-all;line-height:1.5;min-height:30px;margin:0;border-top:2px solid #404040;border-left:2px solid #404040;border-right:2px solid #fff;border-bottom:2px solid #fff;}
 #loading-status{font-family:var(--pixel);font-size:5px;color:var(--muted);margin:2px 4px;letter-spacing:.02em;}
 
 /* ---- FOOTER ---- */
@@ -154,7 +189,7 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
 #kit-lbl{font-family:var(--pixel);font-size:5px;color:var(--muted);letter-spacing:.02em;}
 .footer-state{display:flex;}
 .footer-state span{display:flex;align-items:center;padding:4px 10px;border-right:2px solid #404040;border-left:1px solid #fff;font-family:var(--pixel);font-size:5px;color:var(--muted);}
-#freeze-lbl{color:var(--accent);text-transform:uppercase;}
+#grid-status-lbl{color:var(--accent);text-transform:uppercase;}
 
 /* ---- INTRO ---- */
 .intro-overlay{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:24px;background:rgba(0,0,128,.6);}
@@ -174,9 +209,9 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
 .pill:focus-visible,.btn:focus-visible,input:focus-visible{outline:2px dotted #000;outline-offset:1px;}
 
 /* ====== GAME ====== */
-#game-section{position:relative;width:100%;overflow:hidden;flex-shrink:0;border-style:solid;border-width:3px;border-color:#fff #404040 #404040 #fff;}
+#game-section{position:relative;width:100%;margin-left:auto;margin-right:auto;overflow:hidden;flex-shrink:0;border-style:solid;border-width:3px;border-color:#fff #404040 #404040 #fff;}
 #game-title-bar{padding:3px 6px;background:linear-gradient(90deg,#600000,#c83000,#600000);color:#fff;font-family:var(--pixel);font-size:6px;letter-spacing:.06em;display:flex;align-items:center;justify-content:space-between;}
-#game-canvas{display:block;width:100%;height:min(34vh,260px);max-height:320px;cursor:none;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges;border-top:2px solid #404040;border-bottom:2px solid #fff;}
+#game-canvas{display:block;width:100%;height:min(54vh,430px);max-height:460px;cursor:none;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges;border-top:2px solid #404040;border-bottom:2px solid #fff;}
 #tod-bar{position:absolute;top:32px;left:6px;display:flex;gap:2px;z-index:10;}
 .tod-btn{font-family:var(--pixel);font-size:5px;letter-spacing:.04em;padding:3px 7px;background:rgba(0,0,0,.72);color:rgba(255,255,255,.85);border-style:solid;border-width:2px;border-color:rgba(255,255,255,.35) rgba(0,0,0,.6) rgba(0,0,0,.6) rgba(255,255,255,.35);cursor:pointer;text-transform:uppercase;}
 .tod-btn:hover{background:rgba(40,20,0,.85);color:#fff;}
@@ -186,19 +221,17 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
 .hud-sep{display:none;}
 .hud-zone{color:#ffaa44;}
 .hud-key{display:inline-block;padding:0 3px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);margin:0 1px;}
-#brush-indicator{position:absolute;top:32px;right:6px;font-family:var(--pixel);font-size:5px;color:#fff;background:rgba(0,0,0,.78);border-style:solid;border-width:2px;border-color:rgba(255,255,255,.3) rgba(0,0,0,.5) rgba(0,0,0,.5) rgba(255,255,255,.3);padding:3px 7px;letter-spacing:.05em;z-index:10;}
-
 @media(max-width:900px){
+  #play-layout{grid-template-columns:1fr;max-width:min(920px,100%);}
+  .music-guide-panel{position:static;}
   #grids-wrap{grid-template-columns:1fr}
-  .control-bank{grid-template-columns:1fr 1fr}
-  #game-canvas{height:min(38vh,220px);max-height:280px;}
+  #game-canvas{height:min(40vh,280px);max-height:340px;}
   #int-canvas{height:56px;}
 }
 @media(max-width:640px){
-  .control-bank{grid-template-columns:1fr}
   .intro-steps{grid-template-columns:1fr}
   .intro-card h1{font-size:7px}
-  #game-canvas{height:min(32vh,200px);max-height:240px;}
+  #game-canvas{height:min(36vh,260px);max-height:300px;}
   #int-canvas{height:48px;}
 }
 
@@ -219,25 +252,7 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
         <a class="nav-link" href="blog.html">blog</a>
       </nav>
       <div class="hdr-right">
-        <div class="pill-group" id="kit-btns">
-          <button class="pill on" data-kit="analog">Analog</button>
-          <button class="pill" data-kit="808">808</button>
-          <button class="pill" data-kit="dust">Dust</button>
-          <button class="pill" data-kit="metal">Metal</button>
-          <button class="pill" data-kit="bit">Bit</button>
-        </div>
-        <div class="sep"></div>
-        <button class="btn play-control" id="play" aria-label="Play" title="Play"></button>
-        <button class="btn" id="randomize">randomize</button>
-        <button class="btn" id="mutate">mutate</button>
-        <button class="btn" id="clear">clear</button>
-        <button class="btn warn" id="freeze">freeze</button>
-        <div class="sep"></div>
-        <div class="pill-group" id="mode-btns">
-          <button class="pill on" data-mode="draw">draw</button>
-          <button class="pill" data-mode="bias">bias</button>
-          <button class="pill" data-mode="erase">erase</button>
-        </div>
+        <button class="btn play-control" id="play" aria-label="Play music" title="Play music"></button>
         <button class="btn soft" id="intro-open">guide</button>
       </div>
     </div>
@@ -254,6 +269,45 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
 
   <div id="wrap">
 
+    <div id="play-layout">
+    <aside id="music-guide" class="music-guide-panel">
+      <div class="music-guide-title">How to play</div>
+      <ol class="music-guide-steps">
+        <li><strong>Play</strong> starts the music.</li>
+        <li><strong>Move</strong> Miffy with the arrow keys.</li>
+        <li><strong>Jump</strong> onto different sound zones.</li>
+        <li><strong>Change time</strong> to shift the mood.</li>
+        <li><strong>Collect orbs</strong> to remix the pattern.</li>
+      </ol>
+      <div class="strudel-section">
+        <div class="strudel-label">Strudel code</div>
+        <div id="strudel-box">note("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~")</div>
+      </div>
+    </aside>
+    <main id="play-stage">
+    <div id="game-section">
+      <div id="game-title-bar">
+        <span>🐰 MIFFY'S SOUND WORLD</span>
+        <span style="font-size:5px;opacity:.7">arrow keys · jump · collect remix orbs</span>
+      </div>
+      <canvas id="game-canvas"></canvas>
+      <div id="tod-bar">
+        <button class="tod-btn" data-tod="dawn">dawn</button>
+        <button class="tod-btn active" data-tod="day">day</button>
+        <button class="tod-btn" data-tod="sunset">sunset</button>
+        <button class="tod-btn" data-tod="dusk">dusk</button>
+        <button class="tod-btn" data-tod="night">night</button>
+      </div>
+      <div id="game-hud">
+        <span>row: <span class="hud-zone" id="hud-zone">kick</span></span>
+        <span><span class="hud-key">←→</span> walk</span>
+        <span><span class="hud-key">↑</span> jump</span>
+        <span><span class="hud-key">tod</span> mood</span>
+        <span id="hud-action" style="color:#ffaa44;min-width:60px;"></span>
+      </div>
+    </div>
+
+    <div id="sequencer-feedback">
     <div id="grids-wrap">
       <div class="grid-panel grid-a-panel">
         <div class="grid-tag">
@@ -279,67 +333,16 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
       </div>
       <canvas id="int-canvas"></canvas>
     </div>
-
-    <div id="game-section">
-      <div id="game-title-bar">
-        <span>🐰 MIFFY'S SOUND WORLD</span>
-        <span style="font-size:5px;opacity:.7">arrow keys to move</span>
-      </div>
-      <canvas id="game-canvas"></canvas>
-      <div id="tod-bar">
-        <button class="tod-btn" data-tod="dawn">dawn</button>
-        <button class="tod-btn active" data-tod="day">day</button>
-        <button class="tod-btn" data-tod="sunset">sunset</button>
-        <button class="tod-btn" data-tod="dusk">dusk</button>
-        <button class="tod-btn" data-tod="night">night</button>
-      </div>
-      <div id="brush-indicator">brush · <span id="brush-mode-lbl">draw</span></div>
-      <div id="game-hud">
-        <span>row: <span class="hud-zone" id="hud-zone">kick</span></span>
-        <span><span class="hud-key">←→</span> walk</span>
-        <span><span class="hud-key">↑</span> jump</span>
-        <span><span class="hud-key">still</span> erode</span>
-        <span id="hud-action" style="color:#ffaa44;min-width:60px;"></span>
-      </div>
+    </div>
+    </main>
     </div>
 
-    <div class="panel">
-      <div class="control-bank">
-        <div class="control-section">
-          <div class="section-title"><span>global controls</span><span>markov shape</span></div>
-          <div class="slider-row"><label>tempo</label><input type="range" id="sl-bpm" min="40" max="180" value="108"><span class="val" id="val-bpm">108</span></div>
-          <div class="slider-row"><label>chaos</label><input type="range" id="sl-chaos" min="0" max="100" value="18"><span class="val" id="val-chaos">0.18</span></div>
-          <div class="slider-row"><label>density</label><input type="range" id="sl-density" min="0" max="100" value="30"><span class="val" id="val-density">0.30</span></div>
-          <div class="slider-row"><label>repeat</label><input type="range" id="sl-rep" min="0" max="100" value="55"><span class="val" id="val-rep">0.55</span></div>
-          <div class="slider-row"><label>smooth</label><input type="range" id="sl-smooth" min="0" max="100" value="45"><span class="val" id="val-smooth">0.45</span></div>
-          <div class="subsection-title">interference</div>
-          <div class="slider-row"><label>B ratio</label><input type="range" id="sl-ratio" min="50" max="150" value="81" step="1"><span class="val" id="val-ratio">13/16</span></div>
-          <div class="slider-row"><label>coupling</label><input type="range" id="sl-coupling" min="0" max="100" value="0"><span class="val" id="val-coupling">0.00</span></div>
-        </div>
-        <div class="control-section">
-          <div class="section-title"><span>row pull</span><span>grid bias</span></div>
-          <div id="row-pull-wrap"></div>
-        </div>
-        <div class="control-section">
-          <div class="section-title"><span>chord chain</span></div>
-          <div id="chord-row"></div>
-          <div class="chord-vals">
-            <div class="chord-big"><div class="chord-lbl">current</div><div class="chord-name" id="cur-chord">--</div></div>
-            <div class="chord-big"><div class="chord-lbl">next</div><div class="chord-name" id="next-chord">--</div></div>
-          </div>
-          <div class="subsection-title">strudel preview</div>
-          <div id="strudel-box">--</div>
-          <div id="loading-status">click play to load sounds</div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <footer>
-    <div class="hint">paint cells · walk miffy through platforms · jump = accent · stand still = erode</div>
+    <div class="hint">walk through the world · switch time of day · remix orbs scramble the groove · press Play to hear it</div>
     <div class="footer-state">
-      <span id="freeze-lbl">live grid</span>
-      <span id="kit-lbl">analog drum voices</span>
+      <span id="grid-status-lbl">auto grid</span>
     </div>
   </footer>
 
@@ -352,12 +355,12 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
       </div>
       <div class="intro-card-body">
         <div class="intro-kicker">// sound grid v1.0</div>
-        <h1>Two grids.<br>One pattern.</h1>
-        <p>Grid A runs 16 steps. Grid B runs at a different length — creating rhythmic interference. Walk Miffy through platforms to paint cells. Jump to accent. Stand still to erode. Go underwater to hear the LFO effect.</p>
+        <h1>Play first.<br>Then move.</h1>
+        <p><strong>Press Play</strong>, then move Miffy through the world. Collect remix orbs, switch time of day, and watch the grids show how the Markov sequencer changes the music.</p>
         <div class="intro-steps">
-          <div><b>Walk</b><span>Arrow keys move Miffy and paint cells based on the platform tier.</span></div>
-          <div><b>Jump</b><span>↑ to jump. Landing stamps a full-probability accent cell.</span></div>
-          <div><b>Erode</b><span>Hold still — Miffy scrubs nearby cells, creating silence.</span></div>
+          <div><b>Play</b><span>Starts the samples and sequencer.</span></div>
+          <div><b>Walk</b><span>Arrow keys move Miffy across kick/snare/hat/clap/melody zones.</span></div>
+          <div><b>Mood / remix</b><span>Switch time of day or collect orbs for a short drop and pattern shuffle.</span></div>
         </div>
         <button class="intro-start" id="intro-start">[ OK ] START</button>
       </div>
