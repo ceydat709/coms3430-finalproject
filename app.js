@@ -1465,6 +1465,41 @@
     });
   }
 
+  function randomizeGrid(g) {
+    for (let r = 0; r < NROWS; r++) {
+      const isPitched = ROWS_CONFIG[r].type === "pitched";
+      const threshold = isPitched ? 0.22 : 0.34;
+      for (let c = 0; c < g.cols; c++) {
+        const on = Math.random() < threshold;
+        g.grid[r][c] = on
+          ? isPitched
+            ? Math.random() < 0.55
+              ? PROB_LEVELS[1]
+              : 1
+            : Math.random() < 0.3
+              ? PROB_LEVELS[2]
+              : 1
+          : 0;
+        g.biasGrid[r][c] = false;
+        g.pitchGrid[r][c] = null;
+        g.velGrid[r][c] = 0.7 + Math.random() * 0.5;
+        if (g.grid[r][c] && isPitched) assignPitch(g, r, c);
+      }
+    }
+    g.ph = 0;
+  }
+
+  function randomizeBothGrids() {
+    randomizeGrid(gA);
+    randomizeGrid(gB);
+    collisionCount = 0;
+    document.getElementById("sb-coll").textContent = collisionCount;
+    masterTick = 0;
+    nextBTick = COLS_A / gB.cols;
+    refreshChordHud();
+    render();
+  }
+
   function retimePlayback() {
     if (!playing) return;
     clearInterval(iv);
@@ -1511,6 +1546,8 @@
   const controlWindow = document.getElementById("control-window");
   const controlWindowTitle = document.getElementById("control-window-title");
   const controlWindowClose = document.getElementById("control-window-close");
+  const randomizeGridBtn = document.getElementById("randomize-grid-btn");
+  const exportMidiBtn = document.getElementById("export-midi-btn");
   const paneTitles = { tempo: "tempo", rowpull: "row pull" };
   function openControlPane(name) {
     if (!desktopPanels || !controlWindow) return;
@@ -1539,6 +1576,28 @@
       );
   if (controlWindowClose)
     controlWindowClose.addEventListener("click", closeControlPane);
+  if (randomizeGridBtn)
+    randomizeGridBtn.addEventListener("click", randomizeBothGrids);
+  const midiExporter = window.createMidiExporter
+    ? window.createMidiExporter({
+        rowsConfig: ROWS_CONFIG,
+        noteToMidi,
+        getState: () => ({
+          gA,
+          gB,
+          chordName: CHORDS[chordIdx]?.name || "loop",
+        }),
+        getTempo: () => effectiveBpm(),
+        setStatus: (msg) => {
+          const ls = document.getElementById("loading-status");
+          if (ls) ls.textContent = msg;
+        },
+      })
+    : null;
+  if (exportMidiBtn && midiExporter)
+    exportMidiBtn.addEventListener("click", () =>
+      midiExporter.exportCurrentLoop(),
+    );
 
   function makeSliderRow({
     parent,

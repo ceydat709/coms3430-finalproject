@@ -147,6 +147,43 @@ header{
   font-family:var(--pixel);font-size:5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;
   width:100%;
 }
+.control-randomize-btn{
+  appearance:none;
+  margin:0 auto 10px;
+  padding:5px 10px 4px;
+  background:var(--button-face);
+  color:var(--text);
+  border-style:solid;
+  border-width:2px;
+  border-color:#fff #404040 #404040 #fff;
+  box-shadow:none;
+  cursor:pointer;
+  font-family:var(--pixel);
+  font-size:5px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  line-height:1.2;
+}
+.control-randomize-btn:hover{background:#d4d0c8;}
+.control-randomize-btn:active{
+  border-color:#404040 #fff #fff #404040;
+  padding:6px 9px 3px 11px;
+}
+.control-randomize-btn:focus-visible{
+  outline:1px dotted #000;
+  outline-offset:2px;
+}
+.control-utility-buttons{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  align-items:center;
+  margin:0 auto 10px;
+}
+.control-utility-buttons .control-randomize-btn{
+  margin:0;
+  min-width:126px;
+}
 .desktop-panels{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -406,6 +443,14 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
       </div>
       <div class="control-launcher">
         <div class="control-launcher-title">control panels</div>
+        <div class="control-utility-buttons">
+          <button id="randomize-grid-btn" class="control-randomize-btn" type="button">
+            randomize grid
+          </button>
+          <button id="export-midi-btn" class="control-randomize-btn" type="button">
+            export midi
+          </button>
+        </div>
         <div id="desktop-panels" class="desktop-panels">
           <button class="desktop-panel" type="button" data-panel="tempo">
             <span class="desktop-panel-icon tempo" aria-hidden="true"></span>
@@ -517,6 +562,7 @@ footer{padding:0;border-top:3px solid #404040;background:var(--win-bg);display:f
   </div>
 
 </div>
+<script src="midi-export.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

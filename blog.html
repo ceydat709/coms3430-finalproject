@@ -182,7 +182,7 @@ function output() {
   }
   return masterGain;
 }</code></pre>
-          <p>Finally, the game world is not separate from the sequencer. The world uses the same row model through the <code>ZONES</code> array, which maps regions of the level to the kick, snare, hi-hat, clap, and melody rows. The player can walk and jump through those zones, switch the time of day, and collect remix orbs. When an orb is collected, <code>applyOrbMusicalImpact(orb)</code> advances the harmony, reassigns pitches, boosts coupling, and reshapes the pattern around the current playhead.</p>
+          <p>Finally, the game world is not separate from the sequencer. The world uses the same row model through the <code>ZONES</code> array, which maps regions of the level to the kick, snare, hi-hat, clap, and melody rows. The player can walk and jump through those zones, switch the time of day, and collect remix orbs. When an orb is collected, <code>applyOrbMusicalImpact(orb)</code> advances the harmony, reassigns pitches, boosts coupling, and reshapes the pattern around the current playhead. We also added a small MIDI export utility so the current loop can be saved outside the browser.</p>
         </section>
 
         <section class="blog-card" id="challenges">
@@ -200,7 +200,7 @@ function output() {
 
         <section class="blog-card" id="usage">
           <h2>How To Use It / How It Works</h2>
-          <p>To use the project, the user presses play to start the sequencer and audio system. Grid A and Grid B begin stepping forward, triggering drums, melodies, and pads based on the active cells. Users can edit the grids, adjust controls like tempo, chaos, density, and coupling, or randomize the patterns entirely.</p>
+          <p>To use the project, the user presses play to start the sequencer and audio system. Grid A and Grid B begin stepping forward, triggering drums, melodies, and pads based on the active cells. Users can edit the grids, adjust controls like tempo, chaos, density, and coupling, randomize the patterns, or export the current loop as a MIDI file.</p>
           <p>The main interaction happens in Miffy&apos;s world, where the user moves through color coded zones connected to different sequencer rows. Floating remix orbs trigger musical changes like chord shifts and rhythm variations, while the time of day buttons change both the visuals and the overall mood of the music.</p>
         </section>
 
